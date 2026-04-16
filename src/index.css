@@ -3,7 +3,7 @@
   --bg-soft: #ffe7f3;
   --surface: rgba(255, 255, 255, 0.9);
   --primary: #e062a6;
-  --primary-dark: #bf3f85;
+  --primary-dark: #2f5fbf;
   --text: #3d2332;
   --muted: #7b5a6b;
   --border: #f3c3dc;
@@ -36,7 +36,7 @@ a {
 h1,
 h2,
 h3 {
-  color: var(--primary-dark);
+  color: #2f5fbf;
 }
 
 .brand-title {
