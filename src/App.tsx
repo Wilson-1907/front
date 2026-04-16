@@ -209,7 +209,7 @@ function Header({
     <header className="site-header" id="home">
       <div className="intro-card">
         <p className="label">{label}</p>
-        <h1>Her Creative Court</h1>
+        <h1 className="brand-title">IVY MBOTE</h1>
         <p>{intro}</p>
         <div className="quote-widget">
           <h2>Today&apos;s Inspiration</h2>
