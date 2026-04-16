@@ -250,6 +250,18 @@ button:focus-visible {
   font-size: 0.92rem;
 }
 
+.backend-status {
+  font-weight: 600;
+}
+
+.backend-status.online {
+  color: #2f8a57;
+}
+
+.backend-status.offline {
+  color: #b12e62;
+}
+
 .video-link,
 .art-link {
   color: var(--primary-dark);

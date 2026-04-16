@@ -61,6 +61,7 @@ const STORAGE_KEYS = {
 };
 
 const OWNER_NAME = "Ivy Mbote";
+const API_BASE_URL = "https://back-cmd1.onrender.com";
 
 const QUOTES = [
   "You are becoming everything you once dreamed of.",
@@ -168,6 +169,38 @@ function useDailyQuote() {
   return { quote: QUOTES[quoteIndex], newQuote };
 }
 
+function useBackendHealth() {
+  const [status, setStatus] = useState<"checking" | "online" | "offline">("checking");
+
+  useEffect(() => {
+    let active = true;
+
+    fetch(`${API_BASE_URL}/api/health`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Backend health check failed.");
+        }
+        return response.json();
+      })
+      .then(() => {
+        if (active) {
+          setStatus("online");
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setStatus("offline");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  return status;
+}
+
 function Header({
   label,
   intro,
@@ -176,6 +209,7 @@ function Header({
   intro: string;
 }) {
   const { quote, newQuote } = useDailyQuote();
+  const backendStatus = useBackendHealth();
 
   return (
     <header className="site-header" id="home">
@@ -183,6 +217,9 @@ function Header({
         <p className="label">{label}</p>
         <h1>Her Creative Court</h1>
         <p>{intro}</p>
+        <p className={`entry-meta backend-status ${backendStatus}`}>
+          Backend: {backendStatus === "online" ? "Connected" : backendStatus === "offline" ? "Unavailable" : "Checking..."}
+        </p>
         <div className="quote-widget">
           <h2>Today&apos;s Inspiration</h2>
           <p className="daily-quote">{quote}</p>
