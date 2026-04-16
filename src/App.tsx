@@ -491,11 +491,6 @@ function DashboardPage() {
     newPassword: "",
     confirmPassword: "",
   });
-  const [passwordMessage, setPasswordMessage] = useState("");
-  const [passwordChange, setPasswordChange] = useState({
-    newPassword: "",
-    confirmPassword: "",
-  });
 
   const visibleDance = useMemo(
     () =>
@@ -662,22 +657,6 @@ function DashboardPage() {
     setIsUnlocked(true);
   };
 
-  const changeDashboardPassword = (event: FormEvent) => {
-    event.preventDefault();
-    if (passwordChange.newPassword.trim().length < 4) {
-      setPasswordMessage("Use at least 4 characters for your new password.");
-      return;
-    }
-    if (passwordChange.newPassword !== passwordChange.confirmPassword) {
-      setPasswordMessage("New password and confirmation do not match.");
-      return;
-    }
-    localStorage.setItem(STORAGE_KEYS.dashboardPassword, passwordChange.newPassword);
-    setSavedPassword(passwordChange.newPassword);
-    setPasswordChange({ newPassword: "", confirmPassword: "" });
-    setPasswordMessage("Password updated successfully.");
-  };
-
   const lockDashboard = () => {
     sessionStorage.removeItem(STORAGE_KEYS.dashboardAuth);
     setIsUnlocked(false);
@@ -696,7 +675,7 @@ function DashboardPage() {
             {!savedPassword ? (
               <>
                 <p className="entry-meta">
-                  Create the private password you want for your dashboard.
+                  Create your private password once. After this setup, you will only log in.
                 </p>
                 <form className="entry-form" onSubmit={createDashboardPassword}>
                   <label>
@@ -774,40 +753,7 @@ function DashboardPage() {
           <button type="button" className="secondary-btn" onClick={lockDashboard}>
             Lock Dashboard
           </button>
-          <form className="password-inline-form" onSubmit={changeDashboardPassword}>
-            <label>
-              New Password
-              <input
-                type="password"
-                value={passwordChange.newPassword}
-                onChange={(event) =>
-                  setPasswordChange((prev) => ({
-                    ...prev,
-                    newPassword: event.target.value,
-                  }))
-                }
-                placeholder="Change password"
-                required
-              />
-            </label>
-            <label>
-              Confirm Password
-              <input
-                type="password"
-                value={passwordChange.confirmPassword}
-                onChange={(event) =>
-                  setPasswordChange((prev) => ({
-                    ...prev,
-                    confirmPassword: event.target.value,
-                  }))
-                }
-                placeholder="Repeat new password"
-                required
-              />
-            </label>
-            <button type="submit">Update Password</button>
-          </form>
-          {passwordMessage && <p className="entry-meta">{passwordMessage}</p>}
+          <p className="entry-meta">Password setup is one-time. Future access is login only.</p>
         </section>
       </div>
       <main>

@@ -343,15 +343,6 @@ button:focus-visible {
   padding: 0.75rem 1.1rem;
 }
 
-.password-inline-form {
-  width: 100%;
-  margin-top: 0.75rem;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.65rem;
-  align-items: end;
-}
-
 .bottom-dashboard-link {
   margin: 0.3rem 0;
   font-weight: 600;
@@ -362,9 +353,6 @@ button:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .password-inline-form {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 580px) {
