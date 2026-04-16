@@ -48,12 +48,23 @@ type TechProjectEntry = {
   updatedAt: string;
 };
 
+type PublicQuestionEntry = {
+  id: string;
+  fromName: string;
+  fromEmail: string;
+  question: string;
+  askedAt: string;
+  reply: string;
+  repliedAt: string;
+};
+
 const STORAGE_KEYS = {
   dance: "portfolio_dance_entries",
   art: "portfolio_art_entries",
   books: "portfolio_book_entries",
   basketball: "portfolio_basketball_entries",
   tech: "portfolio_tech_entries",
+  questions: "portfolio_public_questions",
   quoteDate: "portfolio_quote_date",
   quoteIndex: "portfolio_quote_index",
   dashboardAuth: "portfolio_dashboard_auth",
@@ -61,7 +72,6 @@ const STORAGE_KEYS = {
 };
 
 const OWNER_NAME = "Ivy Mbote";
-const API_BASE_URL = "https://back-cmd1.onrender.com";
 
 const QUOTES = [
   "You are becoming everything you once dreamed of.",
@@ -91,6 +101,23 @@ function formatDate(dateString: string) {
     year: "numeric",
     month: "short",
     day: "numeric",
+  });
+}
+
+function formatDateTime(dateString: string) {
+  if (!dateString) {
+    return "Not set";
+  }
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) {
+    return dateString;
+  }
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -169,38 +196,6 @@ function useDailyQuote() {
   return { quote: QUOTES[quoteIndex], newQuote };
 }
 
-function useBackendHealth() {
-  const [status, setStatus] = useState<"checking" | "online" | "offline">("checking");
-
-  useEffect(() => {
-    let active = true;
-
-    fetch(`${API_BASE_URL}/api/health`)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Backend health check failed.");
-        }
-        return response.json();
-      })
-      .then(() => {
-        if (active) {
-          setStatus("online");
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setStatus("offline");
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  return status;
-}
-
 function Header({
   label,
   intro,
@@ -209,7 +204,6 @@ function Header({
   intro: string;
 }) {
   const { quote, newQuote } = useDailyQuote();
-  const backendStatus = useBackendHealth();
 
   return (
     <header className="site-header" id="home">
@@ -217,9 +211,6 @@ function Header({
         <p className="label">{label}</p>
         <h1>Her Creative Court</h1>
         <p>{intro}</p>
-        <p className={`entry-meta backend-status ${backendStatus}`}>
-          Backend: {backendStatus === "online" ? "Connected" : backendStatus === "offline" ? "Unavailable" : "Checking..."}
-        </p>
         <div className="quote-widget">
           <h2>Today&apos;s Inspiration</h2>
           <p className="daily-quote">{quote}</p>
@@ -234,6 +225,7 @@ function Header({
         <a href="#art-gallery">Art Gallery</a>
         <a href="#book-reviews">Book Reviews</a>
         <a href="#basketball-tracker">Basketball Tracker</a>
+        <a href="#public-questions">Ask Ivy</a>
       </nav>
     </header>
   );
@@ -245,6 +237,12 @@ function PublicPage() {
   const [books] = useStoredList<BookEntry>(STORAGE_KEYS.books);
   const [basketball] = useStoredList<BasketballEntry>(STORAGE_KEYS.basketball);
   const [tech] = useStoredList<TechProjectEntry>(STORAGE_KEYS.tech);
+  const [questions, setQuestions] = useStoredList<PublicQuestionEntry>(STORAGE_KEYS.questions);
+  const [questionForm, setQuestionForm] = useState({
+    fromName: "",
+    fromEmail: "",
+    question: "",
+  });
 
   const sortedDance = useMemo(
     () => [...dance].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
@@ -257,12 +255,34 @@ function PublicPage() {
       ),
     [basketball]
   );
+  const sortedQuestions = useMemo(
+    () =>
+      [...questions].sort((a, b) => {
+        return new Date(b.askedAt).getTime() - new Date(a.askedAt).getTime();
+      }),
+    [questions]
+  );
+
+  const submitQuestion = (event: FormEvent) => {
+    event.preventDefault();
+    const payload: PublicQuestionEntry = {
+      id: createId(),
+      fromName: questionForm.fromName.trim(),
+      fromEmail: questionForm.fromEmail.trim(),
+      question: questionForm.question.trim(),
+      askedAt: new Date().toISOString(),
+      reply: "",
+      repliedAt: "",
+    };
+    setQuestions((prev) => [payload, ...prev]);
+    setQuestionForm({ fromName: "", fromEmail: "", question: "" });
+  };
 
   return (
     <>
       <Header
         label="Welcome to my little world"
-        intro="Hi, I am an independent dreamer who finds joy in dance floors, art studios, basketball courts, and cozy novel pages. This is my public portfolio where you can explore my journey."
+        intro="Hi, I am an independent dreamer, a woman in tech who finds joy in dancing, art studios, basketball courts, and cozy novel pages. This is my public portfolio where you can explore my journey."
       />
       <main>
         <section className="card-section">
@@ -414,6 +434,69 @@ function PublicPage() {
             ))}
           </div>
         </section>
+
+        <section id="public-questions" className="card-section">
+          <div className="section-head">
+            <h2>Ask Ivy</h2>
+            <p>Have a question about her work? Leave it here.</p>
+          </div>
+          <form className="entry-form" onSubmit={submitQuestion}>
+            <label>
+              Your Name
+              <input
+                type="text"
+                value={questionForm.fromName}
+                onChange={(event) =>
+                  setQuestionForm((prev) => ({ ...prev, fromName: event.target.value }))
+                }
+                placeholder="Your name"
+                required
+              />
+            </label>
+            <label>
+              Your Email (optional)
+              <input
+                type="email"
+                value={questionForm.fromEmail}
+                onChange={(event) =>
+                  setQuestionForm((prev) => ({ ...prev, fromEmail: event.target.value }))
+                }
+                placeholder="you@example.com"
+              />
+            </label>
+            <label>
+              Your Question
+              <textarea
+                rows={4}
+                value={questionForm.question}
+                onChange={(event) =>
+                  setQuestionForm((prev) => ({ ...prev, question: event.target.value }))
+                }
+                placeholder="Ask Ivy something..."
+                required
+              />
+            </label>
+            <button type="submit">Send Question</button>
+          </form>
+          <div className="entry-list">
+            {!sortedQuestions.length && <p className="empty-state">No questions yet. Be the first to ask.</p>}
+            {sortedQuestions.map((entry) => (
+              <article className="entry-card" key={entry.id}>
+                <h3 className="entry-title">{entry.fromName}</h3>
+                <p className="entry-meta">Asked: {formatDateTime(entry.askedAt)}</p>
+                <p>{entry.question}</p>
+                {entry.reply ? (
+                  <div className="reply-block">
+                    <p className="entry-meta">Ivy replied: {formatDateTime(entry.repliedAt)}</p>
+                    <p>{entry.reply}</p>
+                  </div>
+                ) : (
+                  <p className="entry-meta">Reply pending.</p>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
       </main>
       <footer className="site-footer">
         <p className="bottom-dashboard-link">
@@ -431,12 +514,14 @@ function DashboardPage() {
   const [books, setBooks] = useStoredList<BookEntry>(STORAGE_KEYS.books);
   const [basketball, setBasketball] = useStoredList<BasketballEntry>(STORAGE_KEYS.basketball);
   const [tech, setTech] = useStoredList<TechProjectEntry>(STORAGE_KEYS.tech);
+  const [questions, setQuestions] = useStoredList<PublicQuestionEntry>(STORAGE_KEYS.questions);
 
   const [danceFilter, setDanceFilter] = useState({ query: "", date: "" });
   const [artFilter, setArtFilter] = useState({ query: "", category: "" });
   const [bookFilter, setBookFilter] = useState({ query: "", rating: "" });
   const [basketFilter, setBasketFilter] = useState({ query: "", date: "" });
   const [techFilter, setTechFilter] = useState({ query: "", type: "" });
+  const [questionFilter, setQuestionFilter] = useState({ query: "", status: "" });
 
   const [danceForm, setDanceForm] = useState<DanceEntry>({
     id: "",
@@ -491,6 +576,7 @@ function DashboardPage() {
     newPassword: "",
     confirmPassword: "",
   });
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
 
   const visibleDance = useMemo(
     () =>
@@ -554,6 +640,23 @@ function DashboardPage() {
         return matchesQuery && matchesType;
       }),
     [tech, techFilter]
+  );
+  const visibleQuestions = useMemo(
+    () =>
+      questions
+        .filter((entry) => {
+          const q = questionFilter.query.toLowerCase();
+          const matchesQuery =
+            !q ||
+            entry.fromName.toLowerCase().includes(q) ||
+            entry.question.toLowerCase().includes(q);
+          const matchesStatus =
+            !questionFilter.status ||
+            (questionFilter.status === "answered" ? Boolean(entry.reply) : !entry.reply);
+          return matchesQuery && matchesStatus;
+        })
+        .sort((a, b) => new Date(b.askedAt).getTime() - new Date(a.askedAt).getTime()),
+    [questions, questionFilter]
   );
 
   const submitDance = (event: FormEvent) => {
@@ -621,6 +724,24 @@ function DashboardPage() {
       repoUrl: "",
       updatedAt: "",
     });
+  };
+
+  const saveReply = (entry: PublicQuestionEntry) => {
+    const nextReply = (replyDrafts[entry.id] ?? entry.reply).trim();
+    if (!nextReply) {
+      return;
+    }
+    setQuestions((prev) =>
+      prev.map((item) =>
+        item.id === entry.id
+          ? {
+              ...item,
+              reply: nextReply,
+              repliedAt: new Date().toISOString(),
+            }
+          : item
+      )
+    );
   };
 
   const unlockDashboard = (event: FormEvent) => {
@@ -1270,6 +1391,86 @@ function DashboardPage() {
                 </div>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section id="public-questions" className="card-section">
+          <div className="section-head">
+            <h2>Public Questions</h2>
+            <p>Questions from visitors appear here so Ivy can reply.</p>
+          </div>
+          <div className="filters">
+            <label>
+              Search Questions
+              <input
+                type="search"
+                value={questionFilter.query}
+                onChange={(event) =>
+                  setQuestionFilter((prev) => ({ ...prev, query: event.target.value }))
+                }
+                placeholder="Search by name or question"
+              />
+            </label>
+            <label>
+              Filter Status
+              <select
+                value={questionFilter.status}
+                onChange={(event) =>
+                  setQuestionFilter((prev) => ({ ...prev, status: event.target.value }))
+                }
+              >
+                <option value="">All questions</option>
+                <option value="pending">Pending reply</option>
+                <option value="answered">Answered</option>
+              </select>
+            </label>
+          </div>
+          <div className="entry-list">
+            {!visibleQuestions.length && (
+              <p className="empty-state">No public questions match this filter.</p>
+            )}
+            {visibleQuestions.map((entry) => {
+              const currentReply = replyDrafts[entry.id] ?? entry.reply;
+              return (
+                <article className="entry-card" key={entry.id}>
+                  <h3 className="entry-title">{entry.fromName}</h3>
+                  <p className="entry-meta">Asked: {formatDateTime(entry.askedAt)}</p>
+                  {entry.fromEmail && <p className="entry-meta">Contact: {entry.fromEmail}</p>}
+                  <p>{entry.question}</p>
+                  <label>
+                    Ivy&apos;s Reply
+                    <textarea
+                      rows={3}
+                      value={currentReply}
+                      onChange={(event) =>
+                        setReplyDrafts((prev) => ({
+                          ...prev,
+                          [entry.id]: event.target.value,
+                        }))
+                      }
+                      placeholder="Write a reply..."
+                    />
+                  </label>
+                  <div className="entry-actions">
+                    <button type="button" onClick={() => saveReply(entry)}>
+                      Save Reply
+                    </button>
+                    <button
+                      type="button"
+                      className="danger-btn"
+                      onClick={() =>
+                        setQuestions((prev) => prev.filter((item) => item.id !== entry.id))
+                      }
+                    >
+                      Delete
+                    </button>
+                  </div>
+                  {entry.reply && (
+                    <p className="entry-meta">Replied: {formatDateTime(entry.repliedAt)}</p>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       </main>
